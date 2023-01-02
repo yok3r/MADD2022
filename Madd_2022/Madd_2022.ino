@@ -2,10 +2,14 @@
 unsigned long previousMillis = 0;
 const long interval = 10000;
 
-////// SCD41 Libraries //////
+////// SCD41 Libraries ////// - Sparkfun SCD4X
 #include <Wire.h>
 #include "SparkFun_SCD4x_Arduino_Library.h"
 SCD4x mySensor;
+
+////// PM25 Libraries ////// - Adafruit PM25 AQI
+#include "Adafruit_PM25AQI.h"
+
 
 void setup() {
   Serial.begin(115200);
