@@ -19,6 +19,11 @@ SCD4x mySensor;
 SoftwareSerial pmSerial(2, 3);
 Adafruit_PM25AQI aqi = Adafruit_PM25AQI();
 
+////// SDCard Libraries //////
+#include <SPI.h>
+#include <SD.h>
+const int chipSelect = D8;
+File myFile;
 
 void setup() {
   Serial.begin(115200);
@@ -111,11 +116,37 @@ void readSCD41() {
 
     Serial.println();
     //Save the time value to variable
-  ValuesCache = ValuesCache + "," + mySensor.getCO2() + "," + mySensor.getTemperature() + "," + mySensor.getHumidity();
+    ValuesCache = ValuesCache + "," + mySensor.getCO2() + "," + mySensor.getTemperature() + "," + mySensor.getHumidity();
+  }
+}
+
+void record_SD() {
+  if (!SD.begin(chipSelect)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
+
+  // open the file. note that only one file can be open at a time,
+  // so you have to close this one before opening another.
+  myFile = SD.open("test.txt", FILE_WRITE);
+
+  // if the file opened okay, write to it:
+  if (myFile) {
+    Serial.print("Writing to test.txt...");
+    myFile.println(ValuesCache);
+    // close the file:
+    myFile.close();
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
   }
 }
 
 void loop() {
+
+
 
   ////// Time controller //////
   unsigned long currentMillis = millis();
@@ -127,6 +158,7 @@ void loop() {
     readTime();
     readPM25();
     readSCD41();
+    record_SD();
 
     Serial.println(String("Valuecache: ") + ValuesCache);
   }
