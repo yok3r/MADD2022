@@ -1,6 +1,8 @@
+String ValuesCache, ValuesRecord;
+
 ////// Time controller //////
 unsigned long previousMillis = 0;
-const long interval = 5000;
+const long interval = 10000;
 
 ////// Clock Libraries //////
 #include "RTClib.h"
@@ -67,16 +69,20 @@ void readTime() {
   DateTime time = rtc.now();
   Serial.println(String("DateTime:\t") + time.timestamp(DateTime::TIMESTAMP_FULL));
   Serial.println("\n");
+
+  //Save the time value to variable
+  ValuesCache = String("\t") + time.timestamp(DateTime::TIMESTAMP_FULL);
 }
 
 void readPM25() {
   ////// PM25 Reading //////
   PM25_AQI_Data data;
 
+
   if (!aqi.read(&data)) {
     Serial.println("Could not read from AQI");
     delay(500);  // try again in a bit!
-    return;
+    //return;
   }
 
   Serial.println(F("---------------------------------------"));
@@ -86,6 +92,9 @@ void readPM25() {
   Serial.print(data.pm25_standard);
   Serial.print(F("\t\tPM 10: "));
   Serial.println(data.pm100_standard);
+
+  //Save the time value to variable
+  ValuesCache = ValuesCache + "," + data.pm10_standard + "," + data.pm25_standard + "," + data.pm100_standard;
 }
 
 void readSCD41() {
@@ -101,6 +110,8 @@ void readSCD41() {
     Serial.print(mySensor.getHumidity(), 1);
 
     Serial.println();
+    //Save the time value to variable
+  ValuesCache = ValuesCache + "," + mySensor.getCO2() + "," + mySensor.getTemperature() + "," + mySensor.getHumidity();
   }
 }
 
@@ -111,8 +122,12 @@ void loop() {
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
+    ValuesCache = "";
+
     readTime();
     readPM25();
     readSCD41();
+
+    Serial.println(String("Valuecache: ") + ValuesCache);
   }
 }
