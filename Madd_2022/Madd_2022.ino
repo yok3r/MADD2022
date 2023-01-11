@@ -2,6 +2,10 @@
 unsigned long previousMillis = 0;
 const long interval = 5000;
 
+////// Clock Libraries //////
+#include "RTClib.h"
+RTC_DS1307 rtc;
+
 ////// SCD41 Libraries ////// - Sparkfun SCD4X
 #include <Wire.h>
 #include "SparkFun_SCD4x_Arduino_Library.h"
@@ -19,6 +23,28 @@ void setup() {
   // Wait one second for sensor to boot up!
   delay(1000);
 
+  ////// Clock Setup //////
+#ifndef ESP8266
+  while (!Serial)
+    ;  // wait for serial port to connect. Needed for native USB
+#endif
+
+  if (!rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    Serial.flush();
+    while (1) delay(10);
+  }
+
+  if (!rtc.isrunning()) {
+    Serial.println("RTC is NOT running, let's set the time!");
+    // When time needs to be set on a new device, or after a power loss, the
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
+
   ////// PM25 Setup //////
   pmSerial.begin(9600);
   if (!aqi.begin_UART(&pmSerial)) {  // connect to the sensor over software serial
@@ -35,10 +61,36 @@ void setup() {
   }
 }
 
-void recordValues() {
+
+void readTime() {
+  ////// TIME Reading //////
+  DateTime time = rtc.now();
+  Serial.println(String("DateTime:\t") + time.timestamp(DateTime::TIMESTAMP_FULL));
+  Serial.println("\n");
+}
+
+void readPM25() {
+  ////// PM25 Reading //////
+  PM25_AQI_Data data;
+
+  if (!aqi.read(&data)) {
+    Serial.println("Could not read from AQI");
+    delay(500);  // try again in a bit!
+    return;
+  }
+
+  Serial.println(F("---------------------------------------"));
+  Serial.print(F("PM 1.0: "));
+  Serial.print(data.pm10_standard);
+  Serial.print(F("\t\tPM 2.5: "));
+  Serial.print(data.pm25_standard);
+  Serial.print(F("\t\tPM 10: "));
+  Serial.println(data.pm100_standard);
+}
+
+void readSCD41() {
   ////// SCD41 Reading //////
-  if (mySensor.readMeasurement())  // readMeasurement will return true when fresh data is available
-  {
+  if (mySensor.readMeasurement()) {
     Serial.print(F("CO2(ppm):"));
     Serial.print(mySensor.getCO2());
 
@@ -50,21 +102,7 @@ void recordValues() {
 
     Serial.println();
   }
-
-  ////// PM25 Reading //////
-  PM25_AQI_Data data;
-
-  Serial.println(F("---------------------------------------"));
-  Serial.print(F("PM 1.0: "));
-  Serial.print(data.pm10_standard);
-  Serial.print(F("\t\tPM 2.5: "));
-  Serial.print(data.pm25_standard);
-  Serial.print(F("\t\tPM 10: "));
-  Serial.println(data.pm100_standard);
-  Serial.println(F("Concentration Units (environmental)"));
-  Serial.println(F("---------------------------------------"));
 }
-
 
 void loop() {
 
@@ -72,7 +110,9 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    recordValues();
 
+    readTime();
+    readPM25();
+    readSCD41();
   }
 }
