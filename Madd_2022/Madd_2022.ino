@@ -1,4 +1,10 @@
 String ValuesCache, ValuesRecord;
+////// Program Control //////
+bool Monitor_Time = false;
+bool Monitor_PM25 = false;
+bool Monitor_SCD41 = false;
+bool Monitor_SDCard = false;
+bool Monitor_log = false;
 
 ////// Time controller //////
 unsigned long previousMillis = 0;
@@ -72,8 +78,11 @@ void setup() {
 void readTime() {
   ////// TIME Reading //////
   DateTime time = rtc.now();
-  Serial.println(String("DateTime:\t") + time.timestamp(DateTime::TIMESTAMP_FULL));
-  Serial.println("\n");
+
+  if (Monitor_Time) {
+    Serial.println(String("DateTime:\t") + time.timestamp(DateTime::TIMESTAMP_FULL));
+    Serial.println("\n");
+  }
 
   //Save the time value to variable
   ValuesCache = String("\t") + time.timestamp(DateTime::TIMESTAMP_FULL);
@@ -83,20 +92,22 @@ void readPM25() {
   ////// PM25 Reading //////
   PM25_AQI_Data data;
 
-
-  if (!aqi.read(&data)) {
-    Serial.println("Could not read from AQI");
-    delay(500);  // try again in a bit!
-    //return;
+  while (!aqi.read(&data)) {
+    if (Monitor_log) {
+      Serial.println("Waiting PM25 sensor data...");
+    }
+    delay(500);
   }
+  if (Monitor_PM25) {
 
-  Serial.println(F("---------------------------------------"));
-  Serial.print(F("PM 1.0: "));
-  Serial.print(data.pm10_standard);
-  Serial.print(F("\t\tPM 2.5: "));
-  Serial.print(data.pm25_standard);
-  Serial.print(F("\t\tPM 10: "));
-  Serial.println(data.pm100_standard);
+    Serial.println(F("---------------------------------------"));
+    Serial.print(F("PM 1.0: "));
+    Serial.print(data.pm10_standard);
+    Serial.print(F("\t\tPM 2.5: "));
+    Serial.print(data.pm25_standard);
+    Serial.print(F("\t\tPM 10: "));
+    Serial.println(data.pm100_standard);
+  }
 
   //Save the time value to variable
   ValuesCache = ValuesCache + "," + data.pm10_standard + "," + data.pm25_standard + "," + data.pm100_standard;
@@ -104,7 +115,15 @@ void readPM25() {
 
 void readSCD41() {
   ////// SCD41 Reading //////
-  if (mySensor.readMeasurement()) {
+  while (mySensor.readMeasurement() == 0) {
+    if (Monitor_log) {
+      Serial.println("Waiting SCD41 sensor data...");
+    }
+
+    delay(500);
+  }
+  if (Monitor_SCD41) {
+
     Serial.print(F("CO2(ppm):"));
     Serial.print(mySensor.getCO2());
 
@@ -115,17 +134,19 @@ void readSCD41() {
     Serial.print(mySensor.getHumidity(), 1);
 
     Serial.println();
-    //Save the time value to variable
-    ValuesCache = ValuesCache + "," + mySensor.getCO2() + "," + mySensor.getTemperature() + "," + mySensor.getHumidity();
   }
+  //Save the time value to variable
+  ValuesCache = ValuesCache + "," + mySensor.getCO2() + "," + mySensor.getTemperature() + "," + mySensor.getHumidity();
 }
 
 void record_SD() {
+
+
   if (!SD.begin(chipSelect)) {
     Serial.println("SD initialization failed!");
     return;
   }
-  Serial.println("initialization done.");
+  //Serial.println("initialization done.");
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
@@ -133,14 +154,19 @@ void record_SD() {
 
   // if the file opened okay, write to it:
   if (myFile) {
-    Serial.print("Writing to test.txt...");
+
+
+    if (Monitor_PM25) {
+      Serial.print("Writing to data.csv...");
+    }
+
     myFile.println(ValuesCache);
     // close the file:
     myFile.close();
-    Serial.println("done.");
+
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
+    Serial.println("error opening data.csv");
   }
 }
 
