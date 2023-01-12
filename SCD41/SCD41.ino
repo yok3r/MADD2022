@@ -44,6 +44,8 @@ void setup()
 
 void loop()
 {
+Serial.print(mySensor.readMeasurement());
+
   if (mySensor.readMeasurement()) // readMeasurement will return true when fresh data is available
   {
     Serial.println();
