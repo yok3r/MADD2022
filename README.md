@@ -1,3 +1,5 @@
+http://arduino.esp8266.com/stable/package_esp8266com_index.json
+
 # Introduction
 This repository contains a set of programs that are part of a Master's program at Elisava called the "Master in Data and Design". The program is designed to gather and save data from various sensors in order to study air quality and other environmental factors. The main program, Madd_2022.ino, reads data from PM25 and SCD41 sensors at specified intervals, as well as the current date and time from a clock module. The gathered data is then saved in a data.csv file. The other programs in this repository work in conjunction with the main program to provide a comprehensive data collection system. In the following sections, we will provide a detailed description of each program and their functions.
 
