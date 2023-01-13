@@ -6,6 +6,8 @@ This repository contains a set of programs that are part of a Master's program a
 # Overview
 This repository contains 5 programs that work together to gather and save data from various sensors. The main program, Madd_2022.ino, reads data from PM25 and SCD41 sensors at specified intervals, as well as the current date and time from a clock module. The gathered data is then saved in a data.csv file.
 
+![alt text](https://github.com/yok3r/MADD2022/blob/main/Img/Files.png)
+
 # Programs
 ## ClockSetup.ino
 This program allows for the setting and displaying of the current time on the clock module.
