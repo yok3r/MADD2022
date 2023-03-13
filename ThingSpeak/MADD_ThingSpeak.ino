@@ -60,6 +60,18 @@ void setup() {
   ThingSpeak.begin(client);  // Initialize ThingSpeak
 }
 
+void loop() {
+  ////// Time controller //////
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    connectThingspeak();
+    readPM25();
+    readSCD41();
+    writeThingspeak();
+  }
+}
+
 void connectThingspeak() {
   //// Thingspeak Wifi /////
   if(WiFi.status() != WL_CONNECTED){ // Connect or reconnect to WiFi
@@ -138,16 +150,4 @@ void writeThingspeak() {
     else{
     Serial.println("Problem updating channel. HTTP error code " + String(x));
   }  
-}
-
-void loop() {
-  ////// Time controller //////
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    connectThingspeak();
-    readPM25();
-    readSCD41();
-    writeThingspeak();
-  }
 }
